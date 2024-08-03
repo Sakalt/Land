@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ランド</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #game {
+            margin-top: 20px;
+        }
+        button {
+            margin: 5px;
+        }
+        #shop, #processing, #fruitBarMenu {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <label for="islandName">島の名前:</label>
+        <input type="text" id="islandName" placeholder="島の名前を設定">
+        <button onclick="startGame()">ゲーム開始</button>
+        <button onclick="buyWorker()">めんだこさんを買う</button>
+        <button onclick="buyItem()">ショップ</button>
+        <button onclick="buyFruitBar()">フルーツバーを購入する</button>
+        <button onclick="processItem()">加工</button>
+        <button onclick="exportMap()">マップエクスポート</button>
+        <button onclick="loadMap()">マップ読み込み</button>
+    </div>
+    <div id="game" style="display:none;">
+        <div id="coinDisplay">コイン: 1000</div>
+        <div id="workerStatus">めんだこさん: 0 (価格: 500コイン)</div>
+        <div id="merchantStatus">商人: 0</div>
+        <div id="customerStatus">お客さん: 0</div>
+        <div id="expDisplay">経験値: 0</div>
+        <div id="levelDisplay">レベル: 1</div>
+        <div id="ingredientStatus">素材: 米(0), 草(0), 桜(0), 牛乳(0), イチゴ(0), バナナ(0)</div>
+        <div id="processedStatus">加工品: だんご(0), ういろう(0), イチゴおれ(0), バナナミルク(0)</div>
+        <div id="fruitBarMenu" style="display:none;">
+            <button onclick="processItem('strawberryMilk')">イチゴおれを作る</button>
+            <button onclick="processItem('bananaMilk')">バナナミルクを作る</button>
+        </div>
+    </div>
+    <div id="shop" style="display:none;">
+        <h2>ショップ</h2>
+        <button onclick="buyItemFromShop('rice')">米: 10コイン</button>
+        <button onclick="buyItemFromShop('grass')">草: 5コイン</button>
+        <button onclick="buyItemFromShop('sakura')">桜: 30コイン</button>
+        <button onclick="buyItemFromShop('cow')">牛: 100コイン</button>
+        <button onclick="buyItemFromShop('strawberry')">イチゴ: 20コイン</button>
+        <button onclick="buyItemFromShop('banana')">バナナ: 25コイン</button>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
