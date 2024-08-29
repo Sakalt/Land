@@ -223,3 +223,44 @@ document.querySelector('button[onclick="loadMap()"]').addEventListener('click', 
 
 // ゲーム開始時に保存された状態を読み込む
 window.onload = loadGame;
+// 既存のゲーム状態の変数と関数の下に追加
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const gridSize = 40; // 1ブロックのサイズ
+
+// キャンバスに世界を描画する関数
+function drawWorld() {
+    // 背景（空）
+    ctx.fillStyle = '#87CEEB'; // 空の色
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 地面
+    ctx.fillStyle = '#228B22'; // 地面の色
+    for (let x = 0; x < canvas.width; x += gridSize) {
+        for (let y = canvas.height / 2; y < canvas.height; y += gridSize) {
+            ctx.fillRect(x, y, gridSize, gridSize);
+        }
+    }
+
+    // グリッド線
+    ctx.strokeStyle = '#CCCCCC';
+    for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+// ゲーム開始時に世界を描画
+function startGame() {
+    document.getElementById('game').style.display = 'block';
+    drawWorld(); // 世界の描画
+    updateUI();
+}
