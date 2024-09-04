@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星の島にゃんこ風ゲーム</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #87ceeb;
+      margin: 0;
+    }
+
+    #game-container {
+      width: 800px;
+      height: 600px;
+      background-color: #fff;
+      border: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #farm {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 5px;
+      padding: 10px;
+      background-color: #90ee90;
+    }
+
+    .crop-slot {
+      width: 100%;
+      height: 100px;
+      background-color: #fff;
+      border: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #cats-container {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    #controls {
+      padding: 10px;
+      text-align: center;
+      background-color: #f5f5f5;
+      border-top: 1px solid #ddd;
+    }
+
+    #info {
+      padding: 10px;
+      background-color: #f0f0f0;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .processing {
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="info">
+      <p>コイン: <span id="coin-count">0</span></p>
+      <p>経験値: <span id="xp-count">0</span></p>
+      <p>施設レベル: <span id="facility-level">1</span></p>
+    </div>
+    <div id="farm">
+      <div class="crop-slot" data-index="0"></div>
+      <div class="crop-slot" data-index="1"></div>
+      <div class="crop-slot" data-index="2"></div>
+      <div class="crop-slot" data-index="3"></div>
+      <div class="crop-slot" data-index="4"></div>
+      <div class="crop-slot" data-index="5"></div>
+      <div class="crop-slot" data-index="6"></div>
+      <div class="crop-slot" data-index="7"></div>
+    </div>
+    <div id="cats-container">
+      <!-- にゃんこの表示場所 -->
+    </div>
+    <div id="controls">
+      <button onclick="plantCrop('作物')">作物を植える</button>
+      <button onclick="harvestCrop()">作物を収穫する</button>
+      <button onclick="startProcessing('bread')">パンを作る (50秒)</button>
+      <button onclick="startProcessing('strawberryMilk')">イチゴミルクを作る (2分)</button>
+      <button onclick="sellProducts()">製品を売る</button>
+      <button onclick="upgradeFacility()">施設をアップグレードする (400コイン)</button>
+      <button onclick="resetGame()">データリセット</button>
+    </div>
+  </div>
+  <script>
+    let farm = {
+      crops: Array(8).fill(null),
+      level: 1,
+      processedItems: {
+        bread: 0,
+        strawberryMilk: 0
+      },
+      coins: 0,
+      xp: 0,
+      processing: {}
+    };
+
+    function saveGame() {
+      localStorage.setItem('farmData', JSON.stringify(farm));
+      console.log("ゲームデータが保存されました。");
+    }
+
+    function loadGame() {
+      const farmData = localStorage.getItem('farmData');
+      if (farmData) {
+        farm = JSON.parse(farmData);
+        updateFarm();
+      }
+      console.log("ゲームデータが読み込まれました。");
+    }
+
+    function resetGame() {
+      if (confirm("ゲームデータをリセットしますか？")) {
+        farm = {
+          crops: Array(8).fill(null),
+          level: 1,
+          processedItems: {
+            bread: 0,
+            strawberryMilk: 0
+          },
+          coins: 0,
+          xp: 0,
+          processing: {}
+        };
+        localStorage.removeItem('farmData');
+        updateFarm();
+        console.log("ゲームデータがリセットされました。");
+      }
+    }
+
+    function plantCrop(type) {
+      for (let i = 0; i < farm.crops.length; i++) {
+        if (farm.crops[i] === null) {
+          farm.crops[i] = type;
+          updateFarm();
+          saveGame();
+          console.log(`作物が植えられました。枠: ${i + 1}`);
+          return;
+        }
+      }
+      console.log("作物を植える場所がありません！");
+    }
+
+    function harvestCrop() {
+      for (let i = 0; i < farm.crops.length; i++) {
+        if (farm.crops[i] !== null) {
+          farm.crops[i] = null;
+          updateFarm();
+          saveGame();
+          console.log(`作物を収穫しました。枠: ${i + 1}`);
+          return;
+        }
+      }
+      console.log("収穫できる作物がありません！");
+    }
+
+    function startProcessing(itemType) {
+      if (itemType === 'bread') {
+        if (farm.crops.filter(crop => crop === '作物').length >= 2) {
+          if (!farm.processing.bread) {
+            farm.processing.bread = Date.now();
+            setTimeout(() => processItem('bread'), 50000); // 50秒
+            console.log("パンの加工を開始しました。");
+          } else {
+            console.log("パンの加工が既に進行中です！");
+          }
+        } else {
+          console.log("パンを作るには2つの作物が必要です！");
+        }
+      } else if (itemType === 'strawberryMilk') {
+        if (farm.crops.filter(crop => crop === 'イチゴ').length >= 2 && farm.level >= 2) {
+          if (!farm.processing.strawberryMilk) {
+            farm.processing.strawberryMilk = Date.now();
+            setTimeout(() => processItem('strawberryMilk'), 120000); // 2分
+            console.log("イチゴミルクの加工を開始しました。");
+          } else {
+            console.log("イチゴミルクの加工が既に進行中です！");
+          }
+        } else if (farm.level < 2) {
+          console.log("レベル2に達していないとイチゴミルクを作れません！");
+        } else {
+          console.log("イチゴが足りません！");
+        }
+      }
+      saveGame();
+    }
+
+    function processItem(itemType) {
+      if (itemType === 'bread' && farm.processing.bread) {
+        farm.processedItems.bread += 1;
+        farm.crops = farm.crops.map(crop => crop !== '作物' ? crop : null);
+        farm.coins += 10; // パン1つで得られるコイン
+        farm.xp += 5; // パン1つで得られる経験値
+        delete farm.processing.bread;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("パンを1つ作成しました。");
+      } else if (itemType === 'strawberryMilk' && farm.processing.strawberryMilk) {
+        farm.processedItems.strawberryMilk += 1;
+        farm.crops = farm.crops.map(crop => crop !== 'イチゴ' ? crop : null);
+        farm.coins += 20; // イチゴミルク1つで得られるコイン
+        farm.xp += 10; // イチゴミルク1つで得られる経験値
+        delete farm.processing.strawberryMilk;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("イチゴミルクを1つ作成しました。");
+      }
+    }
+
+    function sellProducts() {
+      const totalProducts = farm.processedItems.bread + farm.processedItems.strawberryMilk;
+      if (totalProducts > 0) {
+        const totalCoins = farm.processedItems.bread * 10 + farm.processedItems.strawberryMilk * 20;
+        farm.coins += totalCoins;
+        farm.processedItems.bread = 0;
+        farm.processedItems.strawberryMilk = 0;
+        updateFarm();
+        saveGame();
+        console.log(`製品を売却しました。得られたコイン: ${totalCoins}`);
+      } else {
+        console.log("売る製品がありません！");
+      }
+    }
+
+    function upgradeFacility() {
+      if (farm.coins >= 400) {
+        farm.coins -= 400;
+        farm.level += 1;
+        updateFarm();
+        saveGame();
+        console.log("施設がアップグレードされました。");
+      } else {
+        console.log("コインが足りません！");
+      }
+    }
+
+    function checkLevelUp() {
+      if (farm.xp >= 100) { // 経験値100でレベルアップ
+        farm.xp -= 100;
+        upgradeFacility();
+        console.log("レベルアップしました！");
+      }
+    }
+
+    function updateFarm() {
+      const cropSlots = document.querySelectorAll('.crop-slot');
+      cropSlots.forEach((slot, index) => {
+        slot.textContent = farm.crops[index] || '';
+      });
+
+      document.getElementById('coin-count').textContent = farm.coins;
+      document.getElementById('xp-count').textContent = farm.xp;
+      document.getElementById('facility-level').textContent = farm.level;
+
+      document.querySelectorAll('.crop-slot').forEach(slot => {
+        const index = slot.getAttribute('data-index');
+        if (farm.processing.bread && farm.crops[index] === '作物') {
+          slot.classList.add('processing');
+          slot.textContent = 'パン作成中...';
+        } else if (farm.processing.strawberryMilk && farm.crops[index] === 'イチゴ') {
+          slot.classList.add('processing');
+          slot.textContent = 'イチゴミルク作成中...';
+        } else {
+          slot.classList.remove('processing');
+        }
+      });
+    }
+
+    window.onload = loadGame;
+  </script>
+</body>
+</html>
