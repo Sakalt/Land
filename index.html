@@ -1,66 +1,350 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星の島にゃんこ風ゲーム</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        #game {
-            margin-top: 20px;
-        }
-        button {
-            margin: 5px;
-        }
-        #shop, #processing, #fruitBarMenu {
-            margin-top: 20px;
-        }
-        #canvas {
-            border: 1px solid black;
-            display: block;
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星の島にゃんこ風ゲーム</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #87ceeb;
+      margin: 0;
+    }
+
+    #game-container {
+      width: 800px;
+      height: 600px;
+      background-color: #fff;
+      border: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    #farm {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 5px;
+      padding: 10px;
+      background-color: #90ee90;
+    }
+
+    .crop-slot {
+      width: 100%;
+      height: 100px;
+      background-color: #fff;
+      border: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #cats-container {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    #controls {
+      padding: 10px;
+      text-align: center;
+      background-color: #f5f5f5;
+      border-top: 1px solid #ddd;
+    }
+
+    #info {
+      padding: 10px;
+      background-color: #f0f0f0;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .processing {
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
-    <div id="ui">
-        <label for="islandName">島の名前:</label>
-        <input type="text" id="islandName" placeholder="島の名前を設定">
-        <button onclick="startGame()">ゲーム開始</button>
-        <button onclick="buyWorker()">めんだこさんを買う</button>
-        <button onclick="buyItem()">ショップ</button>
-        <button onclick="buyFruitBar()">フルーツバーを購入する</button>
-        <button onclick="processItem()">加工</button>
-        <button onclick="exportMap()">マップエクスポート</button>
-        <button onclick="loadMap()">マップ読み込み</button>
+  <div id="game-container">
+    <div id="info">
+      <p>コイン: <span id="coin-count">0</span></p>
+      <p>経験値: <span id="xp-count">0</span></p>
+      <p>施設レベル: <span id="facility-level">1</span></p>
     </div>
-    <div id="game" style="display:none;">
-        <div id="coinDisplay">コイン: 1000</div>
-        <div id="workerStatus">めんだこさん: 0 (価格: 500コイン)</div>
-        <div id="merchantStatus">商人: 0</div>
-        <div id="customerStatus">お客さん: 0</div>
-        <div id="expDisplay">経験値: 0</div>
-        <div id="levelDisplay">レベル: 1</div>
-        <div id="ingredientStatus">素材: 米(0), 草(0), 桜(0), 牛乳(0), イチゴ(0), バナナ(0)</div>
-        <div id="processedStatus">加工品: だんご(0), ういろう(0), イチゴおれ(0), バナナミルク(0)</div>
-        <canvas id="canvas" width="800" height="600"></canvas>
-        <div id="fruitBarMenu" style="display:none;">
-            <button onclick="processItem('strawberryMilk')">イチゴおれを作る</button>
-            <button onclick="processItem('bananaMilk')">バナナミルクを作る</button>
-        </div>
+    <div id="farm">
+      <div class="crop-slot" data-index="0"></div>
+      <div class="crop-slot" data-index="1"></div>
+      <div class="crop-slot" data-index="2"></div>
+      <div class="crop-slot" data-index="3"></div>
+      <div class="crop-slot" data-index="4"></div>
+      <div class="crop-slot" data-index="5"></div>
+      <div class="crop-slot" data-index="6"></div>
+      <div class="crop-slot" data-index="7"></div>
     </div>
-    <div id="shop" style="display:none;">
-        <h2>ショップ</h2>
-        <button onclick="buyItemFromShop('rice')">米: 10コイン</button>
-        <button onclick="buyItemFromShop('grass')">草: 5コイン</button>
-        <button onclick="buyItemFromShop('sakura')">桜: 30コイン</button>
-        <button onclick="buyItemFromShop('cow')">牛: 100コイン</button>
-        <button onclick="buyItemFromShop('strawberry')">イチゴ: 20コイン</button>
-        <button onclick="buyItemFromShop('banana')">バナナ: 25コイン</button>
+    <div id="cats-container">
+      <!-- にゃんこの表示場所 -->
     </div>
-    <script src="game.js"></script>
+    <div id="controls">
+      <button onclick="plantCrop('作物')">作物を植える</button>
+      <button onclick="plantCrop('キャロット')">キャロットを植える</button>
+      <button onclick="plantCrop('トマト')">トマトを植える</button>
+      <button onclick="harvestCrop()">作物を収穫する</button>
+      <button onclick="startProcessing('bread')">パンを作る (50秒)</button>
+      <button onclick="startProcessing('strawberryMilk')">イチゴミルクを作る (2分)</button>
+      <button onclick="startProcessing('juice')">ジュースを作る (1分)</button>
+      <button onclick="startProcessing('cake')">ケーキを作る (3分)</button>
+      <button onclick="sellProducts()">製品を売る</button>
+      <button onclick="upgradeFacility()">施設をアップグレードする (400コイン)</button>
+      <button onclick="resetGame()">データリセット</button>
+    </div>
+  </div>
+  <script>
+    let farm = {
+      crops: Array(8).fill(null),
+      level: 1,
+      processedItems: {
+        bread: 0,
+        strawberryMilk: 0,
+        juice: 0,
+        cake: 0
+      },
+      coins: 0,
+      xp: 0,
+      processing: {}
+    };
+
+    function saveGame() {
+      localStorage.setItem('farmData', JSON.stringify(farm));
+      console.log("ゲームデータが保存されました。");
+    }
+
+    function loadGame() {
+      const farmData = localStorage.getItem('farmData');
+      if (farmData) {
+        farm = JSON.parse(farmData);
+        updateFarm();
+      }
+      console.log("ゲームデータが読み込まれました。");
+    }
+
+    function resetGame() {
+      if (confirm("ゲームデータをリセットしますか？")) {
+        farm = {
+          crops: Array(8).fill(null),
+          level: 1,
+          processedItems: {
+            bread: 0,
+            strawberryMilk: 0,
+            juice: 0,
+            cake: 0
+          },
+          coins: 0,
+          xp: 0,
+          processing: {}
+        };
+        localStorage.removeItem('farmData');
+        updateFarm();
+        console.log("ゲームデータがリセットされました。");
+      }
+    }
+
+    function plantCrop(type) {
+      for (let i = 0; i < farm.crops.length; i++) {
+        if (farm.crops[i] === null) {
+          farm.crops[i] = type;
+          updateFarm();
+          saveGame();
+          console.log(`作物が植えられました。枠: ${i + 1}`);
+          return;
+        }
+      }
+      console.log("作物を植える場所がありません！");
+    }
+
+    function harvestCrop() {
+      for (let i = 0; i < farm.crops.length; i++) {
+        if (farm.crops[i] !== null) {
+          farm.crops[i] = null;
+          updateFarm();
+          saveGame();
+          console.log(`作物を収穫しました。枠: ${i + 1}`);
+          return;
+        }
+      }
+      console.log("収穫できる作物がありません！");
+    }
+
+    function startProcessing(itemType) {
+      if (itemType === 'bread') {
+        if (farm.crops.filter(crop => crop === '作物').length >= 2) {
+          if (!farm.processing.bread) {
+            farm.processing.bread = Date.now();
+            setTimeout(() => processItem('bread'), 50000); // 50秒
+            console.log("パンの加工を開始しました。");
+          } else {
+            console.log("パンの加工が既に進行中です！");
+          }
+        } else {
+          console.log("パンを作るには2つの作物が必要です！");
+        }
+      } else if (itemType === 'strawberryMilk') {
+        if (farm.crops.filter(crop => crop === 'イチゴ').length >= 2 && farm.level >= 2) {
+          if (!farm.processing.strawberryMilk) {
+            farm.processing.strawberryMilk = Date.now();
+            setTimeout(() => processItem('strawberryMilk'), 120000); // 2分
+            console.log("イチゴミルクの加工を開始しました。");
+          } else {
+            console.log("イチゴミルクの加工が既に進行中です！");
+          }
+        } else if (farm.level < 2) {
+          console.log("レベル2に達していないとイチゴミルクを作れません！");
+        } else {
+          console.log("イチゴが足りません！");
+        }
+      } else if (itemType === 'juice') {
+        if (farm.crops.filter(crop => crop === 'トマト').length >= 2) {
+          if (!farm.processing.juice) {
+            farm.processing.juice = Date.now();
+            setTimeout(() => processItem('juice'), 60000); // 1分
+            console.log("ジュースの加工を開始しました。");
+          } else {
+            console.log("ジュースの加工が既に進行中です！");
+          }
+        } else {
+          console.log("ジュースを作るには2つのトマトが必要です！");
+        }
+      } else if (itemType === 'cake') {
+        if (farm.crops.filter(crop => crop === 'キャロット').length >= 2) {
+          if (!farm.processing.cake) {
+            farm.processing.cake = Date.now();
+            setTimeout(() => processItem('cake'), 180000); // 3分
+            console.log("ケーキの加工を開始しました。");
+          } else {
+            console.log("ケーキの加工が既に進行中です！");
+          }
+        } else {
+          console.log("ケーキを作るには2つのキャロットが必要です！");
+        }
+      }
+      saveGame();
+    }
+
+    function processItem(itemType) {
+      if (itemType === 'bread' && farm.processing.bread) {
+        farm.processedItems.bread += 1;
+        farm.crops = farm.crops.map(crop => crop !== '作物' ? crop : null);
+        farm.coins += 10;
+        farm.xp += 5;
+        delete farm.processing.bread;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("パンを1つ作成しました。");
+      } else if (itemType === 'strawberryMilk' && farm.processing.strawberryMilk) {
+        farm.processedItems.strawberryMilk += 1;
+        farm.crops = farm.crops.map(crop => crop !== 'イチゴ' ? crop : null);
+        farm.coins += 20;
+        farm.xp += 10;
+        delete farm.processing.strawberryMilk;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("イチゴミルクを1つ作成しました。");
+      } else if (itemType === 'juice' && farm.processing.juice) {
+        farm.processedItems.juice += 1;
+        farm.crops = farm.crops.map(crop => crop !== 'トマト' ? crop : null);
+        farm.coins += 15;
+        farm.xp += 7;
+        delete farm.processing.juice;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("ジュースを1つ作成しました。");
+      } else if (itemType === 'cake' && farm.processing.cake) {
+        farm.processedItems.cake += 1;
+        farm.crops = farm.crops.map(crop => crop !== 'キャロット' ? crop : null);
+        farm.coins += 30;
+        farm.xp += 15;
+        delete farm.processing.cake;
+        checkLevelUp();
+        updateFarm();
+        saveGame();
+        console.log("ケーキを1つ作成しました。");
+      }
+    }
+
+    function sellProducts() {
+      const totalProducts = farm.processedItems.bread + farm.processedItems.strawberryMilk + farm.processedItems.juice + farm.processedItems.cake;
+      if (totalProducts > 0) {
+        const totalCoins = farm.processedItems.bread * 10 + farm.processedItems.strawberryMilk * 20 + farm.processedItems.juice * 15 + farm.processedItems.cake * 30;
+        farm.coins += totalCoins;
+        farm.processedItems.bread = 0;
+        farm.processedItems.strawberryMilk = 0;
+        farm.processedItems.juice = 0;
+        farm.processedItems.cake = 0;
+        updateFarm();
+        saveGame();
+        console.log(`製品を売却しました。得られたコイン: ${totalCoins}`);
+      } else {
+        console.log("売る製品がありません！");
+      }
+    }
+
+    function upgradeFacility() {
+      if (farm.coins >= 400) {
+        farm.coins -= 400;
+        farm.level += 1;
+        updateFarm();
+        saveGame();
+        console.log("施設がアップグレードされました。");
+      } else {
+        console.log("コインが足りません！");
+      }
+    }
+
+    function checkLevelUp() {
+      if (farm.xp >= 100) { // 経験値100でレベルアップ
+        farm.xp -= 100;
+        upgradeFacility();
+        console.log("レベルアップしました！");
+      }
+    }
+
+    function updateFarm() {
+      const cropSlots = document.querySelectorAll('.crop-slot');
+      cropSlots.forEach((slot, index) => {
+        slot.textContent = farm.crops[index] || '';
+      });
+
+      document.getElementById('coin-count').textContent = farm.coins;
+      document.getElementById('xp-count').textContent = farm.xp;
+      document.getElementById('facility-level').textContent = farm.level;
+
+      document.querySelectorAll('.crop-slot').forEach(slot => {
+        const index = slot.getAttribute('data-index');
+        if (farm.processing.bread && farm.crops[index] === '作物') {
+          slot.classList.add('processing');
+          slot.textContent = 'パン作成中...';
+        } else if (farm.processing.strawberryMilk && farm.crops[index] === 'イチゴ') {
+          slot.classList.add('processing');
+          slot.textContent = 'イチゴミルク作成中...';
+        } else if (farm.processing.juice && farm.crops[index] === 'トマト') {
+          slot.classList.add('processing');
+          slot.textContent = 'ジュース作成中...';
+        } else if (farm.processing.cake && farm.crops[index] === 'キャロット') {
+          slot.classList.add('processing');
+          slot.textContent = 'ケーキ作成中...';
+        } else {
+          slot.classList.remove('processing');
+        }
+      });
+    }
+
+    window.onload = loadGame;
+  </script>
 </body>
 </html>
